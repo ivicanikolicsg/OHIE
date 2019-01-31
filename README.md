@@ -1,5 +1,4 @@
-# OHIE
-OHIE - Blockchain scaling
+# OHIE - Blockchain scaling
 
 The repository contains C++ implementation of OHIE. 
 The technical aspects of the approach are described in [our paper](https://arxiv.org/pdf/1811.12628.pdf). 
