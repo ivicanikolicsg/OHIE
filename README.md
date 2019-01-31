@@ -11,7 +11,10 @@ The code has been tested on Ubuntu 16.04 with Boost ASIO library installed:
 
 ## Quick Test
 
-Compile the code `make` and run the script `quick_text.sh`. This will run OHIE network of 3 nodes -- their outputs are written in `outputnodeX.txt` (so, while running, for example, check the output with `tail -f outputnode1.txt`). 
+1. Compile the code `make` 
+2. Run the script `quick_text.sh`
+
+This will run OHIE network of 3 nodes -- their outputs are written in `outputnodeX.txt` (so, while running, for example, check the output with `tail -f outputnode1.txt`). 
 At the end, make sure to kill the network, i.e. `fuser -k *`.
 
 ## Parameters
