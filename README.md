@@ -21,7 +21,12 @@ At the end, make sure to kill the network, i.e. `fuser -k *`.
 
 There are many parameters that can be configured, starting form the IP address of the nodes, to number of chains, block sizes, mining times, etc: 
 - For most widely used parameters, check the file `_configuration`. 
-- For a full list, check `configuration.cpp`. 
+- For a full list of parameters, check `configuration.cpp`. 
+- The list of network nodes (ip:port) is defined in a separate file, check `_peers`
+- To start a single node use 
+
+	./Node portNumber _peers 
+
 
 ## Evaluating Contracts
 Maian analyzes smart contracts defined in a file `<contract file>` with:  
