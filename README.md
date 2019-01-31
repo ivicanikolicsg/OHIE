@@ -9,6 +9,13 @@ The code has been tested on Ubuntu 16.04 with Boost ASIO library installed:
 
 	sudo apt-get install libboost-all-dev
 
+## Quick Test
+
+Compile the code `make` and run the script `quick_text.sh`. This will run OHIE network of 3 nodes -- their outputs are written in `outputnodeX.txt` (so, while running, for example, check the output with `tail -f outputnode1.txt`)
+
+## Parameters
+
+The configuration of the 
 
 ## Evaluating Contracts
 Maian analyzes smart contracts defined in a file `<contract file>` with:  
