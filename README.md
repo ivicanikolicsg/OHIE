@@ -7,7 +7,8 @@ The technical aspects of the approach are described in [our paper](https://arxiv
 ## Dependencies
 
 The code has been tested on Ubuntu 16.04 with Boost ASIO library installed:
-`sudo apt-get install libboost-all-dev`
+
+	sudo apt-get install libboost-all-dev
 
 
 ## Evaluating Contracts
