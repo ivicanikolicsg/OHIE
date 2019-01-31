@@ -25,7 +25,7 @@ There are many parameters that can be configured, starting form the IP address o
 - The list of network nodes (ip:port) is defined in a separate file, check `_peers`
 - To start a single node use 
 ```
-	./Node portNumber _peers 
+./Node portNumber _peers 
 ```
 
 ## Evaluating Contracts
