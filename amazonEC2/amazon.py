@@ -382,22 +382,17 @@ def relaunch_nodes(instances, impose_limit=True, rate_Mbps="40"):
             if impose_limit:
                 c1 += 'rdev="lo";for iface in $(ifconfig | cut -d " " -f1| tr ":" "\n" | awk NF); do if [ "$iface" != "lo" ]; then rdev=$iface; fi;  done; echo "Network interface:"$rdev":";'
                 c1 += "sudo tc qdisc del dev $rdev root;"
-                #c1 += "sudo tc filter del dev $rdev;"
                 c1 += "sudo tc qdisc add dev $rdev root handle 1: htb;"
                 c1 += "sudo tc class add dev $rdev parent 1: classid 1:1 htb rate 1000Mbps;"
                 c1 += "for((i=2;i<="+str(nodes+1)+";i++)) do "
-                #c1 += "echo $i;"
                 c1 += "     sudo tc class add dev $rdev parent 1:1 classid 1:$i htb rate 1000Mbps;"
                 c1 += "     sudo tc qdisc add dev $rdev handle $i: parent 1:$i tbf rate "+rate_Mbps+"Mbit burst 500k latency 10000s;"
-                #c1 += "     sudo tc filter add dev $rdev pref $i protocol ip u32 match ip sport $(("+str(start_port)+"+$i-2)) 0xffff flowid 1:$i;"
                 c1 += "     sudo tc filter add dev $rdev pref $i protocol ip u32 match ip dport $(("+str(start_port)+"+$i-2)) 0xffff flowid 1:$i;"
                 c1 += "done;"
 
             c1 += "cd node_cpp_code; fuser -k out*; rm out*; rm -rf _Blockchains/*;rm -rf _Sessions/*;rm -rf _Hashes/*;rm -rf _Pings/*;rm -rf _Blocks/*;for((i="+str(start_port)+";i<"+str(start_port+nodes)+";i++))\
                 do echo -n $i+" ";nohup ./Nodeaws $i _network "+ip+" "+ip_private+" >> out$i.txt & done"
             c1 += "'"
-
-            #print(c1)
 
             kl.append( subprocess.Popen( c1 , 
                 shell=True,stdin=None, stdout=None, stderr=None, close_fds=True))
@@ -414,13 +409,7 @@ def special_relaunch_nodes(instances, impose_limit=True, rate_Mbps="40"):
 
     print('='*80+'\n'+ 'SPECIAL Relaunching ::: throughput_limit %d ::: rate %s Mbps' % (impose_limit, rate_Mbps))
 
-
-
-    # create the necessary files, i.e. _peers_ip, _configuration, _network
     create_cpp_network_config_files(instances, FILE_CONFIG_CPP)
-#    FILE_CONFIG_CPP_SPECIAL = FOLDER_NODE_CPP+'/_configuration_special'
-    # create the special network file 
-#    create_cpp_network_config_files(instances, FILE_CONFIG_CPP_SPECIAL)
 
     with open(FILE_CONFIG_CPP,'a+') as f:
         f.write("STORE_BLOCKS=1\n")
@@ -442,13 +431,6 @@ def special_relaunch_nodes(instances, impose_limit=True, rate_Mbps="40"):
     special_node = random.randint(0,count-1)
     special_port = random.randint(start_port, start_port + nodes)
 
-    # REMOVE LATER
-#    special_node = 0
-#    special_port = 8000
-
-    print('SPECIAL')
-    print(special_node)
-    print(special_port)
 
 
     # copy and run the files
@@ -561,10 +543,6 @@ def dump_data(instances):
             full_folder = folder+'/'+get_instance_ip(i)
             os.system('mkdir -p '+ full_folder)
 
-#            c1 = 'scp -i "'+get_instance_key(i)+'" '+username+'@'+get_instance_ip(i)+':~/'+FOLDER_NODE_CPP+'/out* '+full_folder+"/"
-#            c1 += ';scp -i "'+get_instance_key(i)+'" -r '+username+'@'+get_instance_ip(i)+':~/'+FOLDER_NODE_CPP+'/_Hashes '+full_folder+"/"
-#            c1 += ';scp -i "'+get_instance_key(i)+'" -r '+username+'@'+get_instance_ip(i)+':~/'+FOLDER_NODE_CPP+'/_Pings '+full_folder+"/"
-#            c1 += ';scp -i "'+get_instance_key(i)+'" -r '+username+'@'+get_instance_ip(i)+':~/'+FOLDER_NODE_CPP+'/_Blocks '+full_folder+"/"
 
             c1 = 'ssh -i "'+get_instance_key(i)+'"  '+username+'@'+get_instance_ip(i)
             c1 +=' \'cd ~/'+FOLDER_NODE_CPP+'; tar czf '+get_instance_ip(i)+'.tar.gz out* '
@@ -678,8 +656,6 @@ for f in full_regions:
     cnt += full_regions[f]['count']
 print('-'*20+'\n' + "Total: %d" % cnt + '\n' + '-'*20 + '\n\n')
         
-#print(full_regions)        
-#exit()
 
 impose_limit = True
 rate_Mbps="40"
