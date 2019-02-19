@@ -32,5 +32,5 @@ There are many parameters that can be configured, starting form the IP address o
 
 Large scale experiments (based on the above code) were conducted on Amazon EC2, using the scripts from `amazonEC2` folder. 
 
-**Note:** For each AWS region you want to use, make sure you have the public key written in a file and stored in `keys` folder, and have the correct launching templates. Then, update `regions.py` with this info. 
+**Note:** For each AWS region you want to use, make sure you have the public key written in a file and stored in `keys` folder, and have the correct launching templates. Update `regions.py` to reflect the file paths and the templates. 
 
