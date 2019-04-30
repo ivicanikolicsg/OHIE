@@ -396,11 +396,11 @@ void process_buffer( string &m, tcp_server *ser, Blockchain *bc )
 
                   // Assing all from nb
                   network_block *n = b->nb;
-                  n->longest = nb.longest;
+                  n->trailing = nb.trailing;
                   n->merkle_root_chains = nb.merkle_root_chains;
                   n->merkle_root_txs = nb.merkle_root_txs;
                   n->proof_new_chain =  nb.proof_new_chain;
-                  n->proof_longest_chain = nb.proof_longest_chain;
+                  n->proof_trailing_chain = nb.proof_trailing_chain;
                   n->time_mined = nb.time_mined;
                   for( int j=0; j<NO_T_DISCARDS; j++){
                     n->time_commited[j] = 0;
@@ -414,9 +414,9 @@ void process_buffer( string &m, tcp_server *ser, Blockchain *bc )
                       continue;
                   }
 
-                  // Verify the longest block chain 
-                  if (! verify_merkle_proof( n->proof_longest_chain, n->longest, n->merkle_root_chains )){
-                      if ( PRINT_TRANSMISSION_ERRORS ) printf("\033[31;1mFailed to verify longest block chain \033[0m\n");
+                  // Verify the trailing block chain 
+                  if (! verify_merkle_proof( n->proof_trailing_chain, n->trailing, n->merkle_root_chains )){
+                      if ( PRINT_TRANSMISSION_ERRORS ) printf("\033[31;1mFailed to verify trailing block chain \033[0m\n");
                       continue;
                   }
 

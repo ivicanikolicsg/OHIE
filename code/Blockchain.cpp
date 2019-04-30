@@ -432,8 +432,8 @@ Blockchain::Blockchain(BlockHash hashes[MAX_CHAINS])
 		this->chains[i]->is_full_block = true;
 		this->chains[i]->nb = new(network_block);
 		this->chains[i]->nb->depth  = 0;
-		this->chains[i]->nb->weight = 1;
-		this->chains[i]->nb->sum_weight = 0;
+		this->chains[i]->nb->rank = 0;
+		this->chains[i]->nb->next_rank = 0;
 		this->chains[i]->nb->time_mined = 0;
 		this->chains[i]->nb->time_received = 1;
 		for( int j=0; j<NO_T_DISCARDS; j++){
@@ -924,9 +924,9 @@ void Blockchain::update_blocks_commited_time()
 			 */
 
 
-			// Find the minimal weight
+			// Find the minimal next_rank
 			bool stop_this_j = false;
-			uint32_t minimal_weight = -1;
+			uint32_t confirm_bar = -1;
 			for( int i=0; i<CHAINS; i++){
 
 				// Discard the last 
@@ -948,13 +948,13 @@ void Blockchain::update_blocks_commited_time()
 
 				if( stop_this_j ) break;
 
-				if ( t->nb->sum_weight < minimal_weight ) minimal_weight = t->nb->sum_weight;
+				if ( t->nb->next_rank < confirm_bar ) confirm_bar = t->nb->next_rank;
 			}
 
 			if( stop_this_j) continue;
 
 
-			if ( minimal_weight < 0) continue;
+			if ( confirm_bar < 0) continue;
 
 
 			// Update commited times
@@ -968,7 +968,7 @@ void Blockchain::update_blocks_commited_time()
 				if (NULL == t) continue;
 
 				while ( NULL != t  ){
-					if (  t->is_full_block &&  NULL != t->nb && t->nb->sum_weight < minimal_weight &&  0 == t->nb->time_commited[j]   &&  time_of_now > t->nb->time_mined ){
+					if (  t->is_full_block &&  NULL != t->nb && t->nb->next_rank < confirm_bar &&  0 == t->nb->time_commited[j]   &&  time_of_now > t->nb->time_mined ){
 						t->nb->time_commited[j] = time_of_now;
 						commited_total[j] ++;
 						commited_latency[j] += t->nb->time_commited[j] - t->nb->time_mined;

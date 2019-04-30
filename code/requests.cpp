@@ -67,8 +67,8 @@ string create__process_block( network_block *nb )
     string s = "#process_block,"+my_ip+","+to_string(my_port)+","+to_string(nb->chain_id)+","+to_string(nb->parent)+","+to_string(nb->hash)+",";
     s += to_string(nb->no_txs) + ",";
     s += to_string(nb->depth) + ",";
-    s += to_string(nb->weight) + ",";
-    s += to_string(nb->sum_weight);
+    s += to_string(nb->rank) + ",";
+    s += to_string(nb->next_rank);
 
     return s;
 }
@@ -91,8 +91,8 @@ bool parse__process_block( vector<std::string> sp, map<string,int> &passed, stri
     nb.hash           = safe_stoull(  sp[5], pr );
     nb.no_txs         = safe_stoi(    sp[6], pr);
     nb.depth          = safe_stoi(    sp[7], pr );
-    nb.weight         = safe_stoi(    sp[8], pr);
-    nb.sum_weight     = safe_stoi(    sp[9], pr );
+    nb.rank           = safe_stoi(    sp[8], pr);
+    nb.next_rank      = safe_stoi(    sp[9], pr );
 
 
     if(  PRINT_TRANSMISSION_ERRORS  &&  ! (pr && sender_ip.size()> 0 && nb.chain_id < CHAINS ) ){
@@ -231,9 +231,9 @@ string create__full_block( uint32_t chain_id, BlockHash hash, tcp_server *ser, B
     network_block *nb = b->nb;
     if (NULL != nb){
       s += ",";
-      s += to_string(nb->longest) + "," + nb->merkle_root_chains + "," + nb->merkle_root_txs + ",";
+      s += to_string(nb->trailing) + "," + nb->merkle_root_chains + "," + nb->merkle_root_txs + ",";
       for(int i=0; i<nb->proof_new_chain.size(); i++) s += nb->proof_new_chain[i]+",";
-      for(int i=0; i<nb->proof_longest_chain.size(); i++) s += nb->proof_longest_chain[i]+",";
+      for(int i=0; i<nb->proof_trailing_chain.size(); i++) s += nb->proof_trailing_chain[i]+",";
       
       s += to_string(nb->time_mined) ;
       unsigned long time_of_now = std::chrono::system_clock::now().time_since_epoch() /  std::chrono::milliseconds(1);
@@ -265,11 +265,11 @@ bool parse__full_block( vector<std::string> sp, map<string,int> &passed, string 
     hash = safe_stoull( sp[4], pr);
     txs = sp[5];
 
-    nb.longest              = safe_stoull( sp[6], pr );
+    nb.trailing             = safe_stoull( sp[6], pr );
     nb.merkle_root_chains   = sp[7];
     nb.merkle_root_txs      = sp[8];
     for(int j=0; j<MPL; j++)  nb.proof_new_chain.push_back(sp[9+j]);
-    for(int j=0; j<MPL; j++)  nb.proof_longest_chain.push_back(sp[9+MPL+j]);
+    for(int j=0; j<MPL; j++)  nb.proof_trailing_chain.push_back(sp[9+MPL+j]);
     nb.time_mined   = safe_stoull( sp[9+2*MPL], pr );
     sent_time   = safe_stoull( sp[9+2*MPL+1], pr );
 

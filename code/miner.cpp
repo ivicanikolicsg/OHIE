@@ -64,9 +64,9 @@ uint32_t mine_new_block( Blockchain *bc)
 	// Concatenate the candidates of all chains 
 	vector<string> leaves;		// used in Merkle tree hash computation
 
-	// Last block of the longest chain 
-	block *longest_last = bc->get_deepest_child_by_chain_id( 0 );
-	int longest = 0;
+	// Last block of the trailing chain 
+	block *trailing_block = bc->get_deepest_child_by_chain_id( 0 );
+	int trailing_id = 0;
 	for( int i=0; i<CHAINS; i++){
 
 		block *b = bc->get_deepest_child_by_chain_id( i );
@@ -78,10 +78,9 @@ uint32_t mine_new_block( Blockchain *bc)
 			cout <<"Something is wrong in mine_new_block: get_deepest return block with NULL nb pointer"<<endl;
 			exit(3);
 		}
-		//if ( b->nb->depth > longest_last->nb->depth ){
-		if ( b->nb->weight + b->nb->sum_weight > longest_last->nb->weight + longest_last->nb->sum_weight ){
-			longest_last = b;
-			longest = i;
+		if ( b->nb->next_rank > trailing_block->nb->next_rank ){
+			trailing_block = b;
+			trailing_id = i;
 		}
 
 		leaves.push_back( blockhash_to_string( b->hash ) );
@@ -122,8 +121,8 @@ uint32_t mine_new_block( Blockchain *bc)
 	// Find Merkle path for the winning chain
 	vector <string> proof_new_chain = compute_merkle_proof( leaves, chain_id );
 
-	// Find Merkle path for the longest chain
-	vector <string> proof_longest_chain = compute_merkle_proof( leaves, longest );
+	// Find Merkle path for the trailing chain
+	vector <string> proof_trailing_chain = compute_merkle_proof( leaves, trailing_id );
 
 	// Last block of the chain where new block will be mined
 	block *parent = bc->get_deepest_child_by_chain_id( chain_id );
@@ -133,31 +132,15 @@ uint32_t mine_new_block( Blockchain *bc)
 	nb.chain_id = chain_id;
 	nb.parent = parent->hash;
 	nb.hash = new_block;
-	nb.longest = longest_last->hash;
+	nb.trailing = trailing_block->hash;
 	nb.merkle_root_chains = merkle_root_chains;
 	nb.merkle_root_txs = merkle_root_txs;
 	nb.proof_new_chain = proof_new_chain;
-	nb.proof_longest_chain = proof_longest_chain;
+	nb.proof_trailing_chain = proof_trailing_chain;
 	nb.no_txs = no_txs;
-	// Set weights
-	/*
-//	uint32_t ls = longest_last->nb->sum_weight + longest_last->nb->weight;
-//	uint32_t ns = parent->nb->sum_weight + parent->nb->weight;
-//	nb.weight = ((ls > ns ) ? (ls-ns ) : 1 );
-//	nb.sum_weight = parent->nb->sum_weight + parent->nb->weight;
-	*/
-	/*
-	uint32_t los = longest_last->nb->sum_weight;
-	uint32_t nes = parent->nb->sum_weight;
-	nb.weight = ((los > nes ) ? (los-nes ) : 1 );
-	nb.sum_weight = parent->nb->sum_weight + nb.weight;
-	*/
-	uint32_t los = longest_last->nb->sum_weight + longest_last->nb->weight;
-	nb.sum_weight = (NULL != parent ) ? (parent->nb->sum_weight + parent->nb->weight) : 0;
-//	uint32_t nes = ( NULL != parent ) ? parent->nb->sum_weight : 0 ;
-//	nb.weight = ((los > nes + nb.sum_weight ) ? (los-nes-nb.sum_weight ) : 1 );
-	nb.weight = (los > nb.sum_weight ) ? ( los - nb.sum_weight ) : 1;
-
+	nb.rank  = parent->nb->next_rank ;
+	nb.next_rank  = trailing_block->nb->next_rank;
+	if (nb.next_rank <= nb.rank ) nb.next_rank = nb.rank + 1;
 
 
 	nb.depth = parent->nb->depth + 1;
@@ -168,9 +151,6 @@ uint32_t mine_new_block( Blockchain *bc)
 		nb.time_commited[j] = 0;
 		nb.time_partial[j] = 0;
 	}
-
-
-//	cout <<"HERE "<<chain_id << " " << longest<<" "  <<nb.sum_weight + nb.weight << " " << longest_last->nb->sum_weight + longest_last->nb->weight << endl;
 
 
 	// Add the block to the chain
