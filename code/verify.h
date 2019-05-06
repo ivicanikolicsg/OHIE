@@ -26,7 +26,7 @@ string compute_merkle_tree_root( vector<string> leaves );
 vector <string> compute_merkle_proof( vector<string> leaves, int index );
 int merkle_proof_length();
 
-bool verify_merkle_proof( vector <string> proof_longest_chain, BlockHash longest, string merkle_root_chains );
+bool verify_merkle_proof( vector <string> proof, BlockHash bh, string root, uint32_t index );
 
 
 

@@ -85,14 +85,14 @@ bool parse__process_block( vector<std::string> sp, map<string,int> &passed, stri
 
     bool pr = true;
     sender_ip         = sp[1];
-    sender_port       = safe_stoi(    sp[2], pr);
-    nb.chain_id       = safe_stoi(    sp[3], pr);
-    nb.parent         = safe_stoull(  sp[4], pr );
-    nb.hash           = safe_stoull(  sp[5], pr );
-    nb.no_txs         = safe_stoi(    sp[6], pr);
-    nb.depth          = safe_stoi(    sp[7], pr );
-    nb.rank           = safe_stoi(    sp[8], pr);
-    nb.next_rank      = safe_stoi(    sp[9], pr );
+    sender_port       = safe_stoi(    sp[ 2], pr);
+    nb.chain_id       = safe_stoi(    sp[ 3], pr);
+    nb.parent         = safe_stoull(  sp[ 4], pr );
+    nb.hash           = safe_stoull(  sp[ 5], pr );
+    nb.no_txs         = safe_stoi(    sp[ 6], pr);
+    nb.depth          = safe_stoi(    sp[ 7], pr );
+    nb.rank           = safe_stoi(    sp[ 8], pr);
+    nb.next_rank      = safe_stoi(    sp[ 9], pr );
 
 
     if(  PRINT_TRANSMISSION_ERRORS  &&  ! (pr && sender_ip.size()> 0 && nb.chain_id < CHAINS ) ){
@@ -231,9 +231,8 @@ string create__full_block( uint32_t chain_id, BlockHash hash, tcp_server *ser, B
     network_block *nb = b->nb;
     if (NULL != nb){
       s += ",";
-      s += to_string(nb->trailing) + "," + nb->merkle_root_chains + "," + nb->merkle_root_txs + ",";
+      s += to_string(nb->trailing) + "," +to_string(nb->trailing_id) +","+ nb->merkle_root_chains + "," + nb->merkle_root_txs + ",";
       for(int i=0; i<nb->proof_new_chain.size(); i++) s += nb->proof_new_chain[i]+",";
-      for(int i=0; i<nb->proof_trailing_chain.size(); i++) s += nb->proof_trailing_chain[i]+",";
       
       s += to_string(nb->time_mined) ;
       unsigned long time_of_now = std::chrono::system_clock::now().time_since_epoch() /  std::chrono::milliseconds(1);
@@ -255,7 +254,7 @@ bool parse__full_block( vector<std::string> sp, map<string,int> &passed, string 
   int MPL = merkle_proof_length();
 
 
-  if ( sp.size() < 9+2*MPL + 1 ) return false;
+  if ( sp.size() < 10+1*MPL + 1 ) return false;
   if ( key_present( sp[0]+sp[1]+sp[2]+sp[3]+sp[4], passed ) ) return false;
 
     bool pr = true;
@@ -266,12 +265,12 @@ bool parse__full_block( vector<std::string> sp, map<string,int> &passed, string 
     txs = sp[5];
 
     nb.trailing             = safe_stoull( sp[6], pr );
-    nb.merkle_root_chains   = sp[7];
-    nb.merkle_root_txs      = sp[8];
-    for(int j=0; j<MPL; j++)  nb.proof_new_chain.push_back(sp[9+j]);
-    for(int j=0; j<MPL; j++)  nb.proof_trailing_chain.push_back(sp[9+MPL+j]);
-    nb.time_mined   = safe_stoull( sp[9+2*MPL], pr );
-    sent_time   = safe_stoull( sp[9+2*MPL+1], pr );
+    nb.trailing_id          = safe_stoull( sp[7], pr );
+    nb.merkle_root_chains   = sp[8];
+    nb.merkle_root_txs      = sp[9];
+    for(int j=0; j<MPL; j++)  nb.proof_new_chain.push_back(sp[10+j]);
+    nb.time_mined   = safe_stoull( sp[10+1*MPL], pr );
+    sent_time   = safe_stoull( sp[10+1*MPL+1], pr );
 
 
     if(  PRINT_TRANSMISSION_ERRORS  &&  ! (pr && sender_ip.size()> 0 && chain_id < CHAINS  ) ){

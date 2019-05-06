@@ -328,7 +328,7 @@ void process_buffer( string &m, tcp_server *ser, Blockchain *bc )
           network_block nb;
           unsigned long sent_time;
 
-          if( ! parse__full_block( sp, passed,     sender_ip, sender_port, chain_id, hash, txs, nb, sent_time ) )
+          if( ! parse__full_block( sp, passed, sender_ip, sender_port, chain_id, hash, txs, nb, sent_time ) )
           { 
             if ( p+2 == positions.size() ) break;
             continue;
@@ -396,33 +396,22 @@ void process_buffer( string &m, tcp_server *ser, Blockchain *bc )
 
                   // Assing all from nb
                   network_block *n = b->nb;
-                  n->trailing = nb.trailing;
+                  n->trailing    = nb.trailing;
+                  n->trailing_id = nb.trailing_id;
                   n->merkle_root_chains = nb.merkle_root_chains;
                   n->merkle_root_txs = nb.merkle_root_txs;
                   n->proof_new_chain =  nb.proof_new_chain;
-                  n->proof_trailing_chain = nb.proof_trailing_chain;
                   n->time_mined = nb.time_mined;
                   for( int j=0; j<NO_T_DISCARDS; j++){
                     n->time_commited[j] = 0;
                     n->time_partial[j] = 0;
                   }
 
-                  
-                  // Verify the new block chain
-                  if (! verify_merkle_proof( n->proof_new_chain, n->parent, n->merkle_root_chains )){
-                      if ( PRINT_TRANSMISSION_ERRORS ) printf("\033[31;1mFailed to verify new block chain \033[0m\n");
-                      continue;
-                  }
-
-                  // Verify the trailing block chain 
-                  if (! verify_merkle_proof( n->proof_trailing_chain, n->trailing, n->merkle_root_chains )){
-                      if ( PRINT_TRANSMISSION_ERRORS ) printf("\033[31;1mFailed to verify trailing block chain \033[0m\n");
-                      continue;
-                  }
-
-                  // Verify the chain is correct 
                   string h = sha256( n->merkle_root_chains + n->merkle_root_txs );
-                  if ( get_chain_id_from_hash( h ) != n->chain_id ){
+                  uint32_t chain_id_from_hash = get_chain_id_from_hash( h );
+                  
+                  // Verify the chain ID is correct 
+                  if ( chain_id_from_hash != n->chain_id ){
                       if ( PRINT_TRANSMISSION_ERRORS ) printf("\033[31;1mChain_id incorrect for the new block \033[0m\n");
                       continue;
                   }
@@ -430,6 +419,20 @@ void process_buffer( string &m, tcp_server *ser, Blockchain *bc )
                   // Verify blockhash is correct
                   if ( string_to_blockhash( h ) != n->hash ){
                       if ( PRINT_TRANSMISSION_ERRORS ) printf("\033[31;1mBlockhash is incorrect\033[0m\n");
+                      continue;
+                  }
+
+                  // Verify the new block chain Merkle proof
+                  if (! verify_merkle_proof( n->proof_new_chain, n->parent, n->merkle_root_chains, chain_id_from_hash )){
+                      if ( PRINT_TRANSMISSION_ERRORS ) printf("\033[31;1mFailed to verify new block chain Merkle proof \033[0m\n");
+                      continue;
+                  }
+
+                  // Verify trailing 
+                  // If it cannot find the trailing block then ask for it
+                  if( NULL == bc->find_block_by_hash_and_chain_id( n->trailing, n->trailing_id ) ){
+                      string s_trailing = create__ask_block( n->trailing_id, n->trailing, 0, 0  );
+                      ser->write_to_all_peers( s_trailing );
                       continue;
                   }
 
@@ -450,13 +453,15 @@ void process_buffer( string &m, tcp_server *ser, Blockchain *bc )
                       catch(const std::string& ex){  continue; }
                       file << txs;
                       file.close();
-                    }
+                  }
 
                   // Remove from hash table
                   unsigned long time_of_now = std::chrono::system_clock::now().time_since_epoch() /  std::chrono::milliseconds(1);
                   string required_time_to_send=to_string( (time_of_now > sent_time) ? (time_of_now - sent_time) : 0    );
                   bc->set_block_full( chain_id, hash, sender_ip+":"+to_string(sender_port)+" "+required_time_to_send );
                   ser->additional_verified_transaction(tot_transactions);
+
+
 
 
               }

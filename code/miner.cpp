@@ -91,15 +91,10 @@ uint32_t mine_new_block( Blockchain *bc)
 	for( int i=0; i<tot_size_add ; i++)
 		leaves.push_back( EMPTY_LEAF );
 
-	// Add randomness (LATER REMOVE IT)
-
-
 	// hash to produce the hash of the new block
-	//string h = sha256(all_hash);
 	string merkle_root_chains = compute_merkle_tree_root( leaves );
 	string merkle_root_txs = to_string(rng());
 	string h = sha256( merkle_root_chains + merkle_root_txs );
-
 
 	// Determine the chain where it should go
 	uint32_t chain_id = get_chain_id_from_hash(h);
@@ -121,9 +116,6 @@ uint32_t mine_new_block( Blockchain *bc)
 	// Find Merkle path for the winning chain
 	vector <string> proof_new_chain = compute_merkle_proof( leaves, chain_id );
 
-	// Find Merkle path for the trailing chain
-	vector <string> proof_trailing_chain = compute_merkle_proof( leaves, trailing_id );
-
 	// Last block of the chain where new block will be mined
 	block *parent = bc->get_deepest_child_by_chain_id( chain_id );
 
@@ -133,10 +125,10 @@ uint32_t mine_new_block( Blockchain *bc)
 	nb.parent = parent->hash;
 	nb.hash = new_block;
 	nb.trailing = trailing_block->hash;
+	nb.trailing_id = trailing_id;
 	nb.merkle_root_chains = merkle_root_chains;
 	nb.merkle_root_txs = merkle_root_txs;
 	nb.proof_new_chain = proof_new_chain;
-	nb.proof_trailing_chain = proof_trailing_chain;
 	nb.no_txs = no_txs;
 	nb.rank  = parent->nb->next_rank ;
 	nb.next_rank  = trailing_block->nb->next_rank;
@@ -152,7 +144,7 @@ uint32_t mine_new_block( Blockchain *bc)
 		nb.time_partial[j] = 0;
 	}
 
-
+	
 	// Add the block to the chain
 	bc->add_block_by_parent_hash_and_chain_id( parent->hash, new_block, chain_id, nb );
 	if( PRINT_MINING_MESSAGES) {

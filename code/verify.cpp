@@ -108,8 +108,6 @@ vector <string> compute_merkle_proof( vector<string> leaves, int index )
 
 	proof.push_back( tmp[0] );
 
-	// Add index (due to sorted merkle tree)
-	proof.push_back ( to_string( first_index ));
 
 
 	return proof;
@@ -118,17 +116,14 @@ vector <string> compute_merkle_proof( vector<string> leaves, int index )
 
 int merkle_proof_length()
 {
-	return 1 + 1*ceil( log(CHAINS) / log(2) ) + 1  + 1;
+	return 1 + 1*ceil( log(CHAINS) / log(2) ) + 1  ;
 
 }
 
 
-bool verify_merkle_proof( vector <string> proof, BlockHash bh, string root )
+bool verify_merkle_proof( vector <string> proof, BlockHash bh, string root, uint32_t index )
 {
 
-	// Get the index 
-	unsigned int index = stoi ( proof[ proof.size() -1 ] );
-	proof.pop_back();
 
 	string h = blockhash_to_string( bh );
 	if ( proof[0] != h && proof[1] != h)	return false;
