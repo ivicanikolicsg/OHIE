@@ -32,10 +32,10 @@ typedef struct networkblocks{
  	BlockHash parent;
  	BlockHash hash;
 	BlockHash trailing;
+	uint32_t trailing_id;
 	string merkle_root_chains;
 	string merkle_root_txs;
 	vector <string> proof_new_chain;
-	vector <string> proof_trailing_chain;
 	uint32_t no_txs;
 	uint32_t depth;
 	uint32_t rank;
