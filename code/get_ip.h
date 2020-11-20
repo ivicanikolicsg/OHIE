@@ -9,8 +9,6 @@
 #include <arpa/inet.h>  ///< getsockname
 #include <unistd.h>     ///< close
 
-#include <iostream>
-
 using namespace std;
 
 string get_my_local_ip();
