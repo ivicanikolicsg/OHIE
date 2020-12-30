@@ -63,14 +63,14 @@ EC_KEY* get_private_key_from_file(string filename)
     EC_KEY *eckey = NULL;
     EC_POINT *pub_key = NULL;
     const EC_GROUP *group = NULL;
-    BIGNUM start;
+    BIGNUM *start;
     BIGNUM *res;
     BN_CTX *ctx;
 
-    BN_init(&start);
+    start = BN_new();
     ctx = BN_CTX_new(); // ctx is an optional buffer to save time from allocating and deallocating memory whenever required
 
-    res = &start;
+    res = start;
     BN_hex2bn(&res, strpkey.c_str());
     eckey = EC_KEY_new_by_curve_name(NID_secp256k1);
     group = EC_KEY_get0_group(eckey);
@@ -84,6 +84,7 @@ EC_KEY* get_private_key_from_file(string filename)
 
 
     EC_KEY_set_public_key(eckey, pub_key);
+    BN_free(start);
 
     return eckey;
 }
