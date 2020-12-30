@@ -85,7 +85,7 @@ tcp::socket& tcp_connection::socket()
 
 
 
-
+// This function is called every time a new tcp connection is created
 void tcp_connection::start()
 {
   
@@ -421,7 +421,9 @@ void tcp_server::run_network()
 
   //          peers[i].session = make_shared<tcp_connection>(acceptor_.get_io_service());
           try{
-            peers[i].session = tcp_connection::create(acceptor_.get_io_service());
+              boost::asio::io_context& io_context = static_cast<boost::asio::io_context&>(acceptor_.get_executor().context());
+
+              peers[i].session = tcp_connection::create(io_context);
           }
           catch(...){
             cout << "Creating session threw... nothing major..."<<endl;
@@ -432,7 +434,9 @@ void tcp_server::run_network()
 
           if ( peers[i]._strand == NULL ){
             try{
-              peers[i]._strand = new boost::asio::io_service::strand( acceptor_.get_io_service() );
+                boost::asio::io_context& io_context = static_cast<boost::asio::io_context&>(acceptor_.get_executor().context());
+
+                peers[i]._strand = new boost::asio::io_service::strand( io_context );
             }
             catch(...){
               cout <<"Creating strand threw... nothing major..."<<endl;
@@ -466,7 +470,7 @@ void tcp_server::run_network()
             }
             else
             {
-              close_peer_connection( i );
+                close_peer_connection( i );
             }
           });   
 
@@ -497,7 +501,9 @@ void tcp_server::run_network()
 
     // Get full block s
   if ( time_of_now - last_ask_for_full > ASK_FOR_FULL_BLOCKS_EACH_MILLISECONDS){
-    
+
+      // Processing all the newly arrived full blocks.
+      // We have to broadcast them. Then we erase all the broadcasted one from list.
       vector< pair <BlockHash, uint32_t> > blocks = bc->get_non_full_blocks( time_of_now );
 
       for( auto it=blocks.begin(); it != blocks.end(); it++){
@@ -640,7 +646,10 @@ void tcp_server::run_network()
 
 void tcp_server::start_accept()
 {
-    tcp_connection::pointer new_connection = tcp_connection::create(acceptor_.get_io_service());
+    boost::asio::io_context& io_context = static_cast<boost::asio::io_context&>(acceptor_.get_executor().context());
+//            boost::asio::query(
+//            acceptor_.get_executor(), boost::asio::execution::context);
+    tcp_connection::pointer new_connection = tcp_connection::create(io_context);//acceptor_.get_executor());//.get_io_service());
     new_connection->id = rng();
 
 
@@ -661,7 +670,7 @@ void tcp_server::handle_accept(tcp_connection::pointer new_connection,const boos
       else{
 
         new_connection->start();
-        printf("\033[32;1m[+] Connection established from %s:%d\n\033[0m", 
+        printf("\033[32;1m[+] Connection established from %s:%d\n\033[0m",
             new_connection->socket().remote_endpoint().address().to_string().c_str(), new_connection->socket().remote_endpoint().port());
       }
     }

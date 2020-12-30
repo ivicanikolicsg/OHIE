@@ -26,46 +26,52 @@ typedef uint64_t BlockHash;
  *
  */
 
-typedef struct networkblocks{
+typedef struct networkblocks{                   // a block.
+                                                // the real block structure which is serialized on network.
+                                                // An instance of process_block
 
- 	uint32_t chain_id;
- 	BlockHash parent;
- 	BlockHash hash;
-	BlockHash trailing;
-	uint32_t trailing_id;
-	string merkle_root_chains;
-	string merkle_root_txs;
-	vector <string> proof_new_chain;
-	uint32_t no_txs;
-	uint32_t depth;
-	uint32_t rank;
-	uint32_t next_rank;
-	unsigned long time_mined;
-	unsigned long time_received;
-	unsigned long time_commited[NO_T_DISCARDS];
-	unsigned long time_partial[NO_T_DISCARDS];
+ 	uint32_t chain_id;                          // Corresponding chain id
+ 	BlockHash parent;                           // parent block hash
+ 	BlockHash hash;                             // block hash
+	BlockHash trailing;                         // the block which had the greatest next_rank before mining this block
+	uint32_t trailing_id;                       // the chain in which trailing block is located on
+	string merkle_root_chains;                  // merkle root of deepest blocks
+	string merkle_root_txs;                     // trxs merkle root
+	vector <string> proof_new_chain;            // merkle proof of trailing block
+	uint32_t no_txs;                            // trxs number in block
+	uint32_t depth;                             // block depth in chain
+	uint32_t rank;                              // rank
+	uint32_t next_rank;                         // next_rank
+	unsigned long time_mined;                   // mining time
+	unsigned long time_received;                // receiving time or mining time
+	unsigned long time_commited[NO_T_DISCARDS]; // the time in which this block is confirmed on
+	unsigned long time_partial[NO_T_DISCARDS];  // the time in which this block is partially confirmed on
 
 
 }network_block;
 
-typedef struct hashes{
+typedef struct hashes{              // it is only an abstraction for a block.
+                                    // node makes this structure in order to work with network_blocks
 
-	BlockHash hash;
-	network_block *nb;
-	bool is_full_block;
+	BlockHash hash;                 // block hash
+	network_block *nb;              // network block links to this block
+	bool is_full_block;             // These blocks are not full. In order to do this, only their hash is stored and all other stuffs are ignored for later filling.
 
-	struct hashes *left, *right;
-	struct hashes *parent;
-	struct hashes *child;
-	struct hashes *sibling;
+	struct hashes *left, *right;    // These pointers make a binary search tree.
+	                                // Only needs for searching through the chain, sorts the blocks. Increasing from left to right
+	struct hashes *parent;          // Parent block in chain.
+	struct hashes *child;           // Child block in chain
+	struct hashes *sibling;         // Handling fork.
 }block;
 
 
-typedef struct incomplete_blocks{
-	block *b;
-	struct incomplete_blocks *next;
-	unsigned long last_asked;
-	uint32_t no_asks;
+typedef struct incomplete_blocks{   // when a block arrives, we check whether it's parent is in chain or not. If it is, then we simply add the child to its parent and upgrade our chain
+                                    // and if it isn't, we have to put this new block in incomplete blocks, hoping that someday we can find the parent.
+                                    // each incomplete_block is included in a chain of incomplete_blocks, and the roots of these chains form a link list. For a new incomplete_block, if its parent is in one of the existing incomplete chains, then we add it to the paren's chain as its children.
+	block *b;                       // corresponding block structure
+	struct incomplete_blocks *next; // this variable is set when this block is one of the root blocks in an incomplete chain of blocks, and we find a new incomplete_block that its parent is neither located in not previous incomplete chains.
+	unsigned long last_asked;       // last time it was asked from other peers
+	uint32_t no_asks;               // number of times it is asked from other peers
 }block_incomplete;
 
 
@@ -111,8 +117,8 @@ private:
 	block *chains[MAX_CHAINS];
 	block_incomplete *inchains[MAX_CHAINS];
 	block *deepest[MAX_CHAINS];
-	map<BlockHash,pair <int,unsigned long> > received_non_full_blocks;
-	map<BlockHash,unsigned long > waiting_for_full_blocks;
+	map<BlockHash,pair <int,unsigned long> > received_non_full_blocks;                          // All the newly arrived blocks are non_full, and when its corresponding transactions are find and attached to it, then it will change state to full block.
+	map<BlockHash,unsigned long > waiting_for_full_blocks;                                      // used when you have send a ask_full_block request. then the requested block will be added here in order not to ask it multiple times.
 	unsigned long mined_blocks, processed_full_blocks, total_received_blocks;
 	unsigned long long receiving_latency;
 	unsigned long receving_total;

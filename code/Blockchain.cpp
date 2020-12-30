@@ -190,7 +190,7 @@ bool Blockchain::add_block_by_parent_hash( block **root, BlockHash parent, Block
 	else{
 		block *z = p->child;
 		while ( z->sibling != NULL) z = z->sibling;
-		z->sibling = newnode;
+		z->sibling = newnode; // Fork handling
 	}
 
 	return true;
@@ -256,6 +256,7 @@ block_incomplete *Blockchain::remove_one_chain( block_incomplete *l, block_incom
 	}
 }
 
+// Only checks the next linked list and ignores binary tree
 block_incomplete *Blockchain::is_incomplete_hash( block_incomplete *l, BlockHash hash)
 {
 	if ( NULL == l) return NULL;
@@ -270,6 +271,7 @@ block_incomplete *Blockchain::is_incomplete_hash( block_incomplete *l, BlockHash
 	return NULL;
 }
 
+// Searching through the liked list of blocks by next iterator. For each block, also looks inside its binary tree
 bool Blockchain::is_in_incomplete(block_incomplete *l, BlockHash parent_hash, BlockHash child_hash)
 {
 
@@ -305,7 +307,7 @@ block *Blockchain::find_incomplete_block(block_incomplete *l, BlockHash child_ha
 
 block_incomplete *Blockchain::add_block_to_incomplete(block_incomplete *l, BlockHash parent_hash, BlockHash child_hash)
 {
-
+    // This chain had not any incomplete chain until now. Let's make one new
 	if ( NULL == l){
 
 		block *bl = NULL;
@@ -321,8 +323,9 @@ block_incomplete *Blockchain::add_block_to_incomplete(block_incomplete *l, Block
 		return bi;
 	}
 
-	block_incomplete *tmp = l, *penultimate;
-	block_incomplete *ch = NULL, *ph = NULL;
+	block_incomplete *tmp = l, *penultimate; // ch: child's head (root) block
+	block_incomplete *ch = NULL, *ph = NULL; // ph: parent's head (root) block
+	// Iterating through the head blocks. For each of them, searching over its binary tree to find the parent and child
 	while( NULL != tmp  ){
 
 		if ( NULL == ch ) ch = (find_block_by_hash( tmp->b, child_hash ) != NULL) ? tmp : NULL;
@@ -333,6 +336,7 @@ block_incomplete *Blockchain::add_block_to_incomplete(block_incomplete *l, Block
 	}
 	
 	// Neither parent nor child hash has been found
+	// head block of none of them is find. So let's make the parent block as a new head block and add the child into its binary tree
 	if ( NULL == ch && NULL == ph ){
 		block *bl = NULL;
 		bl = bootstrap_chain ( parent_hash  );
@@ -346,10 +350,12 @@ block_incomplete *Blockchain::add_block_to_incomplete(block_incomplete *l, Block
 		bi->no_asks = 0;
 		penultimate->next = bi;
 	}
+	//  The parent head block is find. Just add child block to parent's binary tree
 	else if ( NULL == ch ){
 
 		add_block_by_parent_hash( &(ph->b), parent_hash, child_hash ) ;
 	}
+	// Only the child head block is find. So let's make a new one for parent, and add child to it. Probably, child block itself was the head block.
 	else if ( NULL == ph){
 	
 		block *bl = bootstrap_chain( parent_hash );
@@ -361,6 +367,7 @@ block_incomplete *Blockchain::add_block_to_incomplete(block_incomplete *l, Block
 	    ch->last_asked = 0;
 	    ch->no_asks = 0;
 	}
+	// Both of them are in different head block's chains. Child itself has to be a head block in this case. So let's remove child's and put him on the parent's head block's binary tree.
 	else{
 	
 		block *Ztmp = ch->b;
@@ -376,7 +383,7 @@ block_incomplete *Blockchain::add_block_to_incomplete(block_incomplete *l, Block
 			tmp->sibling = Ztmp;
 		}
 
-
+        // Finally, remove the child from head blocks.
 		l = remove_one_chain( l, ch );
 
 	}
@@ -560,7 +567,7 @@ bool Blockchain::add_received_block( uint32_t chain_id, BlockHash parent, BlockH
 				tmp->sibling = child_block;
 			}
 
-
+			// Child was one of the head blocks. So let's remove it from head blocks. Now he has a real parent :)
 			this->inchains[chain_id] = this->remove_one_chain( this->inchains[chain_id], bi );
 
 
@@ -594,7 +601,7 @@ bool Blockchain::add_received_block( uint32_t chain_id, BlockHash parent, BlockH
 
 	}
 
-	// Else, need to add to incomplete chain and ask for more 
+	// Else, need to add it to incomplete chain and ask for more
 	else{
 
 		if ( is_in_incomplete( this->inchains[chain_id], parent, hash) ) {
@@ -609,6 +616,10 @@ bool Blockchain::add_received_block( uint32_t chain_id, BlockHash parent, BlockH
     	block *bz = find_incomplete_block( this->inchains[chain_id], hash );
 		if( NULL != bz ){
 			bz->nb = new network_block(nb);
+		}
+		else{
+		    printf("It's impossible...");
+		    fflush(stdout);
 		}
 
 

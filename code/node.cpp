@@ -232,6 +232,7 @@ int main(int argc, char **argv) {
 
     /*
      * Start the server
+     * For the first time, server will run this function synchronously, but later times it will be run async
      */
     server.run_network();
     time_of_start = std::chrono::system_clock::now().time_since_epoch() /  std::chrono::milliseconds(1);
